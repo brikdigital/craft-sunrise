@@ -1,6 +1,33 @@
-{# @var plugin \brikdigital\sunrise\Sunrise #}
-{# @var settings \brikdigital\sunrise\models\Settings #}
-
 {% import '_includes/forms.twig' as forms %}
 
-{# ... #}
+{{ forms.autosuggestField({
+    label: 'API Url',
+    name: 'apiUrl',
+    suggestEnvVars: true,
+    value: settings.apiUrl,
+    required: true
+}) }}
+
+{{ forms.autosuggestField({
+    label: 'API key',
+    name: 'apiKey',
+    suggestEnvVars: true,
+    value: settings.apiKey,
+    required: true
+}) }}
+
+{{ forms.autosuggestField({
+    label: 'Merchant ID',
+    name: 'merchantId',
+    suggestEnvVars: true,
+    value: settings.merchantId,
+    required: true
+}) }}
+
+{{ forms.autosuggestField({
+    label: 'Channel ID',
+    name: 'channelId',
+    suggestEnvVars: true,
+    value: settings.channelId,
+    required: true
+}) }}
