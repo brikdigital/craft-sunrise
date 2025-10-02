@@ -4,6 +4,7 @@ namespace brikdigital\sunrise;
 
 use Craft;
 use brikdigital\sunrise\models\Settings;
+use brikdigital\sunrise\services\Sunrise as SunriseAPI;
 use craft\base\Model;
 use craft\base\Plugin;
 
@@ -15,6 +16,7 @@ use craft\base\Plugin;
  * @author brikdigital
  * @copyright brikdigital
  * @license MIT
+ * @property-read SunriseAPI $api
  */
 class Sunrise extends Plugin
 {
@@ -25,7 +27,7 @@ class Sunrise extends Plugin
     {
         return [
             'components' => [
-                // Define component configs here...
+                'api' => SunriseAPI::class
             ],
         ];
     }
@@ -33,7 +35,6 @@ class Sunrise extends Plugin
     public function init(): void
     {
         parent::init();
-
         $this->attachEventHandlers();
 
         // Any code that creates an element query or loads Twig should be deferred until
@@ -45,13 +46,13 @@ class Sunrise extends Plugin
 
     protected function createSettingsModel(): ?Model
     {
-        return Craft::createObject(Settings::class);
+        return new Settings();
     }
 
     protected function settingsHtml(): ?string
     {
-        return Craft::$app->view->renderTemplate('sunrise/_settings.twig', [
-            'plugin' => $this,
+        return Craft::$app->getView()->renderTemplate(
+            "$this->handle/_settings", [
             'settings' => $this->getSettings(),
         ]);
     }
