@@ -1,0 +1,32 @@
+{
+    "name": "brikdigital/craft-sunrise",
+    "type": "craft-plugin",
+    "license": "mit",
+    "require": {
+        "php": ">=8.0.2",
+        "craftcms/cms": "^4.15.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "brikdigital\\sunrise\\": "src/"
+        }
+    },
+    "extra": {
+        "handle": "sunrise",
+        "name": "craft-sunrise",
+        "developer": "brikdigital",
+        "documentationUrl": "",
+        "class": "brikdigital\\sunrise\\Sunrise"
+    },
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.0.2"
+        },
+        "allow-plugins": {
+            "yiisoft/yii2-composer": true,
+            "craftcms/plugin-installer": true
+        }
+    }
+}
+
