@@ -4,6 +4,7 @@ namespace brikdigital\sunrise;
 
 use Craft;
 use brikdigital\sunrise\models\Settings;
+use brikdigital\sunrise\services\ProductGroup;
 use brikdigital\sunrise\services\Sunrise as SunriseAPI;
 use craft\base\Model;
 use craft\base\Plugin;
@@ -17,6 +18,7 @@ use craft\base\Plugin;
  * @copyright brikdigital
  * @license MIT
  * @property-read SunriseAPI $api
+ * @property-read ProductGroup $productGroup
  */
 class Sunrise extends Plugin
 {
@@ -27,7 +29,8 @@ class Sunrise extends Plugin
     {
         return [
             'components' => [
-                'api' => SunriseAPI::class
+                'api' => SunriseAPI::class,
+                'productGroup' => ProductGroup::class
             ],
         ];
     }
@@ -61,5 +64,10 @@ class Sunrise extends Plugin
     {
         // Register event handlers here ...
         // (see https://craftcms.com/docs/4.x/extend/events.html to get started)
+    }
+
+    protected function afterInstall(): void
+    {
+        $this->productGroup->ensureSectionAndField();
     }
 }
