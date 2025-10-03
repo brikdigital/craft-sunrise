@@ -13,7 +13,7 @@
     },
     "extra": {
         "handle": "sunrise",
-        "name": "craft-sunrise",
+        "name": "Sunrise",
         "developer": "brikdigital",
         "documentationUrl": "",
         "class": "brikdigital\\sunrise\\Sunrise"
