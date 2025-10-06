@@ -22,24 +22,25 @@ class Sunrise extends Component
         parent::__construct();
     }
 
-    public function get(string $endpoint)
+    public function get(string $endpoint): array
     {
         return $this->sendRequest($endpoint);
     }
 
-    private function sendRequest(string $endpoint, string $method = 'GET'): ?object
+    private function sendRequest(string $endpoint, string $method = 'GET'): array
     {
         $client = $this->getClient();
 
         try {
             $response = $client->request($method, $endpoint);
-            $json = json_decode($response->getBody()->getContents());
+            $body = $response->getBody()->getContents();
+            $json = null;
             if (empty($json)) {
-                // TODO
+                \brikdigital\sunrise\Sunrise::error('Error decoding JSON', ['body' => $body]);
             }
             return $json;
         } catch (GuzzleException $e) {
-            // TODO
+            \brikdigital\sunrise\Sunrise::error('Sunrise API error', ['error' => $e->getMessage()]);
         }
     }
 
@@ -51,7 +52,7 @@ class Sunrise extends Component
 
         $authentication = $this->authenticate();
         if (empty($authentication->token)) {
-            // TODO
+            \brikdigital\sunrise\Sunrise::error('Unable to authenticate with Sunrise API', ['response' => $authentication]);
         }
 
         return $this->client = new Client([
@@ -80,7 +81,7 @@ class Sunrise extends Component
             ]);
             return json_decode($response->getBody()->getContents());
         } catch (GuzzleException $e) {
-            // TODO
+            \brikdigital\sunrise\Sunrise::error('Sunrise API authentication error', ['error' => $e->getMessage()]);
         }
     }
 }
