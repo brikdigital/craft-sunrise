@@ -15,21 +15,23 @@ use yii\base\Component;
  */
 class ProductGroup extends Component
 {
+    private const SECTION_HANDLE = 'sunriseProductGroups';
+
     public function ensureSectionAndField(): void
     {
-        $section = $this->createSection('sunriseProductGroups', 'Product groups');
+        $section = $this->createSection('Product groups');
         $field = $this->createField('sunriseForeignId', 'Sunrise Foreign ID', 'Sunrise');
         $this->attachFieldToSection($section, $field);
     }
 
-    private function createSection(string $handle, string $name): Section
+    private function createSection(string $name): Section
     {
         $sectionsService = Craft::$app->sections;
-        $section = $sectionsService->getSectionByHandle($handle);
+        $section = $this->getSection();
 
         if (!$section) {
             $section = new Section([
-                'handle' => $handle,
+                'handle' => self::SECTION_HANDLE,
                 'type' => Section::TYPE_STRUCTURE,
                 'name' => $name,
             ]);
@@ -38,11 +40,16 @@ class ProductGroup extends Component
             $section->setSiteSettings($siteSettings);
 
             if (!$sectionsService->saveSection($section)) {
-                throw new \Exception('Could not save section: ' . json_encode($section->getErrors()));
+                \brikdigital\sunrise\Sunrise::error('Could not save section', ['errors' => $section->getErrors()]);
             }
         }
 
         return $section;
+    }
+
+    public function getSection(): ?Section
+    {
+        return Craft::$app->getSections()->getSectionByHandle(self::SECTION_HANDLE);
     }
 
     private function createField(string $handle, string $name, string $groupName): CustomField
@@ -65,7 +72,7 @@ class ProductGroup extends Component
             ]);
 
         if (!$field->id && !$fieldsService->saveField($field)) {
-            throw new \Exception('Could not save field: ' . json_encode($field->getErrors()));
+            \brikdigital\sunrise\Sunrise::error('Could not save field', ['errors' => $field->getErrors()]);
         }
 
         return new CustomField($field);
@@ -81,7 +88,7 @@ class ProductGroup extends Component
 
             $entryType->setFieldLayout($entryType->getFieldLayout());
             if (!Craft::$app->sections->saveEntryType($entryType)) {
-                throw new \Exception('Could not save entry type: ' . json_encode($entryType->getErrors()));
+                \brikdigital\sunrise\Sunrise::error('Could not save entry type', ['errors' => $entryType->getErrors()]);
             }
         }
     }
