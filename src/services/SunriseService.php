@@ -8,7 +8,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use yii\base\Component;
 
-class Sunrise extends Component
+class SunriseService extends Component
 {
     private Settings $settings;
     private string $baseUri;
@@ -22,20 +22,38 @@ class Sunrise extends Component
         parent::__construct();
     }
 
-    public function get(string $endpoint): array
+    public function get(string $endpoint, array $query = []): array
     {
-        return $this->sendRequest($endpoint);
+        return $this->sendRequest($endpoint, $query);
     }
 
-    private function sendRequest(string $endpoint, string $method = 'GET'): array
+//    public function getAll(string $endpoint, int $offset = 0, int $pageSize = 20): array
+//    {
+//        $query = [
+//            'limit' => $pageSize,
+//            'offset' => $offset
+//        ];
+//        $response = $this->get($endpoint, $query);
+//
+//        if (count($response) == $pageSize) {
+//            $nextPage = $this->getAll($endpoint, $offset + $pageSize);
+//            $response = array_merge($response, $nextPage);
+//        }
+//
+//        return $response;
+//    }
+
+    private function sendRequest(string $endpoint, array $query = [], string $method = 'GET'): array
     {
         $client = $this->getClient();
 
         try {
-            $response = $client->request($method, $endpoint);
+            $response = $client->request($method, $endpoint, [
+                'query' => $query,
+            ]);
             $body = $response->getBody()->getContents();
-            $json = null;
-            if (empty($json)) {
+            $json = json_decode($body, true);
+            if ($json === null) {
                 \brikdigital\sunrise\Sunrise::error('Error decoding JSON', ['body' => $body]);
             }
             return $json;

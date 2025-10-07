@@ -2,16 +2,17 @@
 
 namespace brikdigital\sunrise;
 
-use brikdigital\sunrise\exceptions\SunriseException;
 use Craft;
+use Monolog\Formatter\LineFormatter;
+use Psr\Log\LogLevel;
+use brikdigital\sunrise\exceptions\SunriseException;
 use brikdigital\sunrise\models\Settings;
-use brikdigital\sunrise\services\ProductGroup;
-use brikdigital\sunrise\services\Sunrise as SunriseAPI;
+use brikdigital\sunrise\services\ProductService;
+use brikdigital\sunrise\services\ProductGroupService;
+use brikdigital\sunrise\services\SunriseService;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\log\MonologTarget;
-use Monolog\Formatter\LineFormatter;
-use Psr\Log\LogLevel;
 use yii\log\Logger;
 
 /**
@@ -22,8 +23,9 @@ use yii\log\Logger;
  * @author brikdigital
  * @copyright brikdigital
  * @license MIT
- * @property-read SunriseAPI $api
- * @property-read ProductGroup $productGroup
+ * @property-read SunriseService $api
+ * @property-read ProductGroupService $productGroup
+ * @property-read ProductService $product
  */
 class Sunrise extends Plugin
 {
@@ -34,8 +36,9 @@ class Sunrise extends Plugin
     {
         return [
             'components' => [
-                'api' => SunriseAPI::class,
-                'productGroup' => ProductGroup::class
+                'api' => SunriseService::class,
+                'productGroup' => ProductGroupService::class,
+                'product' => ProductService::class
             ],
         ];
     }
@@ -70,11 +73,6 @@ class Sunrise extends Plugin
     {
         // Register event handlers here ...
         // (see https://craftcms.com/docs/4.x/extend/events.html to get started)
-    }
-
-    protected function afterInstall(): void
-    {
-        $this->productGroup->ensureSectionAndField();
     }
 
     /**

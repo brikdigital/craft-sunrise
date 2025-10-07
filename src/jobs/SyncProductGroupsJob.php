@@ -7,7 +7,7 @@ use Craft;
 use craft\elements\Entry;
 use craft\queue\BaseJob;
 
-class SyncProductGroups extends BaseJob
+class SyncProductGroupsJob extends BaseJob
 {
     public function execute($queue): void
     {
@@ -73,6 +73,6 @@ class SyncProductGroups extends BaseJob
 
     protected function defaultDescription(): ?string
     {
-        return 'Sync product groups';
+        return 'Syncing product groups';
     }
 }
