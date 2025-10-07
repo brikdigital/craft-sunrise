@@ -4,7 +4,8 @@
     "license": "mit",
     "require": {
         "php": ">=8.0.2",
-        "craftcms/cms": "^4.15.0"
+        "craftcms/cms": "^4.15.0",
+        "craftcms/commerce": "^4.8.0"
     },
     "autoload": {
         "psr-4": {
