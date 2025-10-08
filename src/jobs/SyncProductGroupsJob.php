@@ -19,52 +19,38 @@ class SyncProductGroupsJob extends BaseJob
             Sunrise::error('No product groups found', ['response' => $response]);
         }
 
-        $section = Sunrise::getInstance()->productGroup->getSection();
+        $service = Sunrise::getInstance()->productGroup;
+        $section = $service->getSection();
         foreach ($productGroups as $productGroup) {
             $productGroupId = $productGroup['typeId'];
 
-            $parent = Entry::find()
-                ->sectionId($section->id)
-                ->sunriseForeignId($productGroupId)
-                ->level(1)
-                ->one();
+            $parent = $service->getProductGroupByForeignId($productGroupId);
             if (!$parent) {
-                $title = $productGroup['descriType'] ?? null;
                 $parent = new Entry([
                     'sectionId' => $section->id,
                     'typeId' => $section->getEntryTypes()[0]?->id,
-                    'title' => $title,
                     'sunriseForeignId' => $productGroupId
                 ]);
-
-                if (Craft::$app->getElements()->saveElement($parent)) {
-                    Sunrise::info("Created product group $title");
-                }
             }
+
+            $parent->title = $productGroup['descriType'] ?? null;
+            Craft::$app->getElements()->saveElement($parent);
 
             foreach ($productGroup['categoryIds'] as $category) {
                 $categoryId = $category['categoryId'];
 
-                $child = Entry::find()
-                    ->sectionId($section->id)
-                    ->sunriseForeignId($categoryId)
-                    ->level(2)
-                    ->one();
+                $child = $service->getProductGroupByForeignId($productGroupId, $categoryId);
                 if (!$child) {
-                    $title = $category['descriCategory'] ?? null;
                     $child = new Entry([
                         'sectionId' => $section->id,
                         'typeId' => $section->getEntryTypes()[0]?->id,
-                        'title' => $title,
                         'sunriseForeignId' => $categoryId
                     ]);
-
-                    if (Craft::$app->getElements()->saveElement($child)) {
-                        Sunrise::info("Created product subgroup $title");
-                    }
-
-                    Craft::$app->getStructures()->append($section->structureId, $child, $parent);
                 }
+
+                $child->title = $category['descriCategory'] ?? null;
+                Craft::$app->getElements()->saveElement($child);
+                Craft::$app->getStructures()->append($section->structureId, $child, $parent);
             }
         }
 
