@@ -102,14 +102,7 @@ class SyncProductsJob extends BaseJob
             foreach ($productSkus as $sku) {
                 $skuId = $sku['sku_id'];
 
-                $variant = $product->id
-                    ? Variant::find()
-                        ->productId($product->id)
-                        ->sku($skuId)
-                        ->status(null)
-                        ->one()
-                    : null;
-
+                $variant = $product->id ? $productService->getVariant($product, $skuId) : null;
                 if (!$variant) {
                     $variant = new Variant();
                     $variant->setSku($skuId);

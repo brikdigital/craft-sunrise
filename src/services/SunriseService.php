@@ -27,21 +27,21 @@ class SunriseService extends Component
         return $this->sendRequest($endpoint, $query);
     }
 
-//    public function getAll(string $endpoint, int $offset = 0, int $pageSize = 20): array
-//    {
-//        $query = [
-//            'limit' => $pageSize,
-//            'offset' => $offset
-//        ];
-//        $response = $this->get($endpoint, $query);
-//
-//        if (count($response) == $pageSize) {
-//            $nextPage = $this->getAll($endpoint, $offset + $pageSize);
-//            $response = array_merge($response, $nextPage);
-//        }
-//
-//        return $response;
-//    }
+    public function getAll(string $endpoint, array $query = [], int $offset = 0, int $pageSize = 1000): array
+    {
+        $query = array_merge($query, [
+            'limit' => $pageSize,
+            'offset' => $offset
+        ]);
+        $response = $this->get($endpoint, $query);
+
+        if (count($response) == $pageSize) {
+            $nextPage = $this->getAll($endpoint, $query, $offset + $pageSize, $pageSize);
+            $response = array_merge($response, $nextPage);
+        }
+
+        return $response;
+    }
 
     private function sendRequest(string $endpoint, array $query = [], string $method = 'GET'): array
     {
