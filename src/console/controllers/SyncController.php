@@ -2,6 +2,7 @@
 
 namespace brikdigital\sunrise\console\controllers;
 
+use brikdigital\sunrise\jobs\SyncAttributesJob;
 use brikdigital\sunrise\jobs\SyncProductGroupsJob;
 use brikdigital\sunrise\jobs\SyncProductsJob;
 use brikdigital\sunrise\jobs\SyncProductStockJob;
@@ -23,5 +24,10 @@ class SyncController extends Controller
     public function actionStock(): void
     {
         Queue::push(new SyncProductStockJob());
+    }
+
+    public function actionAttributes(): void
+    {
+        Queue::push(new SyncAttributesJob());
     }
 }

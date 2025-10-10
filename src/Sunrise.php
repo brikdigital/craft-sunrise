@@ -7,8 +7,9 @@ use Monolog\Formatter\LineFormatter;
 use Psr\Log\LogLevel;
 use brikdigital\sunrise\exceptions\SunriseException;
 use brikdigital\sunrise\models\Settings;
-use brikdigital\sunrise\services\ProductService;
+use brikdigital\sunrise\services\AttributeService;
 use brikdigital\sunrise\services\ProductGroupService;
+use brikdigital\sunrise\services\ProductService;
 use brikdigital\sunrise\services\SunriseService;
 use craft\base\Model;
 use craft\base\Plugin;
@@ -26,6 +27,7 @@ use yii\log\Logger;
  * @property-read SunriseService $api
  * @property-read ProductGroupService $productGroup
  * @property-read ProductService $product
+ * @property-read AttributeService $attributeService
  */
 class Sunrise extends Plugin
 {
@@ -38,7 +40,8 @@ class Sunrise extends Plugin
             'components' => [
                 'api' => SunriseService::class,
                 'productGroup' => ProductGroupService::class,
-                'product' => ProductService::class
+                'product' => ProductService::class,
+                'attributeService' => AttributeService::class
             ],
         ];
     }
