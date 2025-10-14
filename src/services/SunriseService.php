@@ -43,22 +43,28 @@ class SunriseService extends Component
         return $response;
     }
 
-    private function sendRequest(string $endpoint, array $query = [], string $method = 'GET'): array
+    public function post(string $endpoint, array $body, array $query = []): array
+    {
+        return $this->sendRequest($endpoint, $query, $body, 'POST');
+    }
+
+    private function sendRequest(string $endpoint, array $query = [], array $body = [], string $method = 'GET'): array
     {
         $client = $this->getClient();
 
         try {
             $response = $client->request($method, $endpoint, [
                 'query' => $query,
+                'json' => $body
             ]);
-            $body = $response->getBody()->getContents();
-            $json = json_decode($body, true);
+            $contents = $response->getBody()->getContents();
+            $json = json_decode($contents, true);
             if ($json === null) {
-                \brikdigital\sunrise\Sunrise::error('Error decoding JSON', ['body' => $body]);
+                \brikdigital\sunrise\Sunrise::error('Error decoding JSON', ['contents' => $contents]);
             }
             return $json;
         } catch (GuzzleException $e) {
-            \brikdigital\sunrise\Sunrise::error('Sunrise API error', ['error' => $e->getMessage()]);
+            \brikdigital\sunrise\Sunrise::error('Sunrise API error', ['error' => $e->getMessage()], $e->getCode());
         }
     }
 

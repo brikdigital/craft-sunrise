@@ -3,17 +3,22 @@
 namespace brikdigital\sunrise;
 
 use Craft;
+use craft\controllers\UsersController;
 use Monolog\Formatter\LineFormatter;
 use Psr\Log\LogLevel;
 use brikdigital\sunrise\exceptions\SunriseException;
 use brikdigital\sunrise\models\Settings;
 use brikdigital\sunrise\services\AttributeService;
+use brikdigital\sunrise\services\CustomerService;
 use brikdigital\sunrise\services\ProductGroupService;
 use brikdigital\sunrise\services\ProductService;
 use brikdigital\sunrise\services\SunriseService;
 use craft\base\Model;
 use craft\base\Plugin;
+use craft\events\UserEvent;
 use craft\log\MonologTarget;
+use craft\services\Users;
+use yii\base\Event;
 use yii\log\Logger;
 
 /**
@@ -27,7 +32,8 @@ use yii\log\Logger;
  * @property-read SunriseService $api
  * @property-read ProductGroupService $productGroup
  * @property-read ProductService $product
- * @property-read AttributeService $attributeService
+ * @property-read AttributeService $attribute
+ * @property-read CustomerService $customer
  */
 class Sunrise extends Plugin
 {
@@ -41,7 +47,8 @@ class Sunrise extends Plugin
                 'api' => SunriseService::class,
                 'productGroup' => ProductGroupService::class,
                 'product' => ProductService::class,
-                'attributeService' => AttributeService::class
+                'attribute' => AttributeService::class,
+                'customer' => CustomerService::class
             ],
         ];
     }
@@ -74,8 +81,27 @@ class Sunrise extends Plugin
 
     private function attachEventHandlers(): void
     {
-        // Register event handlers here ...
-        // (see https://craftcms.com/docs/4.x/extend/events.html to get started)
+        Event::on(
+            Users::class,
+            Users::EVENT_AFTER_ACTIVATE_USER,
+            function (UserEvent $event) {
+                $user = $event->user;
+                if ($user->isInGroup($this->customer::USER_GROUP_HANDLE)) {
+                    $this->customer->createCustomer($user);
+                }
+            }
+        );
+
+        Event::on(
+            UsersController::class,
+            UsersController::EVENT_AFTER_ASSIGN_GROUPS_AND_PERMISSIONS,
+            function (UserEvent $event) {
+                $user = $event->user;
+                if ($user->isInGroup($this->customer::USER_GROUP_HANDLE)) {
+                    $this->customer->createCustomer($user);
+                }
+            }
+        );
     }
 
     /**
@@ -96,10 +122,10 @@ class Sunrise extends Plugin
         ]);
     }
 
-    public static function error(string $message, array $context = []): void
+    public static function error(string $message, array $context = [], int $code = 0): void
     {
         $message = self::log($message, Logger::LEVEL_ERROR, $context);
-        throw new SunriseException($message);
+        throw new SunriseException($message, $code);
     }
 
     public static function info(string $message, array $context = []): void
