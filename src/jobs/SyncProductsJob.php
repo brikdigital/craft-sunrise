@@ -98,6 +98,17 @@ class SyncProductsJob extends BaseJob
                 'productId' => $product->sunriseForeignId,
             ])[0]['ProductSkuList'] ?? [];
 
+            // If no SKU's, main product can be the only variant sold
+            if (empty($productSkus) && !empty((int)$sunriseProduct['price_prod'])) {
+                $productSkus[] = [
+                    'sku_id' => $product->sunriseForeignId,
+                    'assigned_attribute_options' => $sunriseProduct['product_title'],
+                    'sku_price_excl_vat' => $sunriseProduct['price_prod'],
+                    'visible_in_webshop' => $sunriseProduct['status_pro'] === 'ACT',
+                    'sku_status' => $sunriseProduct['status_pro'] === 'ACT',
+                ];
+            }
+
             $variants = [];
             foreach ($productSkus as $sku) {
                 $skuId = $sku['sku_id'];
