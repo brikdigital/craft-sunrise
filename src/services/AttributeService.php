@@ -25,6 +25,16 @@ class AttributeService extends Component
         return Craft::$app->getSections()->getSectionByHandle(self::SECTION_HANDLE);
     }
 
+    public function getAttributeByForeignId(string $attributeId)
+    {
+        return Entry::find()
+            ->section(self::SECTION_HANDLE)
+            ->sunriseForeignId($attributeId)
+            ->level(1)
+            ->status(null)
+            ->one();
+    }
+
     public function getOptionByForeignId(string $attributeId, string $optionId)
     {
         return Entry::find()

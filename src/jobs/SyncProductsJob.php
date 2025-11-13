@@ -2,6 +2,7 @@
 
 namespace brikdigital\sunrise\jobs;
 
+use brikdigital\sunrise\services\AttributeService;
 use brikdigital\sunrise\services\ProductGroupService;
 use brikdigital\sunrise\services\ProductService;
 use brikdigital\sunrise\services\SunriseService;
@@ -28,6 +29,7 @@ class SyncProductsJob extends BaseJob
     private ProductService $productService;
     private ProductGroupService $productGroupService;
     private Discounts $discountService;
+    private AttributeService $attributeService;
     private int $productTypeId;
     private int $limit = 20;
 
@@ -39,6 +41,7 @@ class SyncProductsJob extends BaseJob
         $this->productService = $plugin->product;
         $this->productGroupService = $plugin->productGroup;
         $this->discountService = new Discounts();
+        $this->attributeService = $plugin->attribute;
         $this->productTypeId = $this->productService->getProductType()->id;
 
         parent::__construct($config);
@@ -186,6 +189,19 @@ class SyncProductsJob extends BaseJob
                 $sku['visible_in_webshop'],
                 $sku['sku_status']
             ]);
+
+            // Attributes
+            $attributes = [];
+            foreach ($sku['assigned_attributes'] ?? [] as $assignedAttribute) {
+                if (!empty($assignedAttribute['attribute_id'] && !empty($assignedAttribute['option_id']))) {
+                    $attribute = $this->attributeService->getAttributeByForeignId($assignedAttribute['attribute_id']);
+                    $option = $this->attributeService->getOptionByForeignId($attribute->id, $assignedAttribute['option_id']);
+                    if ($option) {
+                        $attributes[] = $option;
+                    }
+                }
+            }
+            $variant->sunriseAttributes = collect($attributes);
 
             $variants[] = $variant;
         }

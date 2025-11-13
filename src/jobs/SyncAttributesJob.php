@@ -18,7 +18,7 @@ class SyncAttributesJob extends BaseJob
     {
         $plugin = Sunrise::getInstance();
         $this->api = $plugin->api;
-        $this->service = $plugin->attributeService;
+        $this->service = $plugin->attribute;
 
         parent::__construct($config);
     }
@@ -47,7 +47,7 @@ class SyncAttributesJob extends BaseJob
             $sunriseOptions = array_filter($sunriseOptions, fn($option) => $option['lang_id'] === 'EN');
 
             foreach ($sunriseOptions as $sunriseOption) {
-                $optionId = $sunriseOption['option_extension'] ?? null;
+                $optionId = $sunriseOption['option_id'] ?? null;
 
                 $option = $this->service->getOptionByForeignId($attribute->id, $optionId);
                 if (!$option) {
