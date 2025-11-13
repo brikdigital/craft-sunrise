@@ -64,7 +64,7 @@ class SunriseService extends Component
             }
             return $json;
         } catch (GuzzleException $e) {
-            \brikdigital\sunrise\Sunrise::error('Sunrise API error', ['error' => $e->getMessage()], $e->getCode());
+            \brikdigital\sunrise\Sunrise::error('Sunrise API error', ['error' => $e->getResponse()->getBody()->getContents()], $e->getCode());
         }
     }
 
@@ -105,7 +105,7 @@ class SunriseService extends Component
             ]);
             return json_decode($response->getBody()->getContents());
         } catch (GuzzleException $e) {
-            \brikdigital\sunrise\Sunrise::error('Sunrise API authentication error', ['error' => $e->getMessage()]);
+            \brikdigital\sunrise\Sunrise::error('Sunrise API authentication error', ['error' => $e->getResponse()->getBody()->getContents()]);
         }
     }
 }

@@ -22,6 +22,7 @@ class ProductGroupService extends Component
             ->section(self::SECTION_HANDLE)
             ->sunriseForeignId($parentForeignId)
             ->level(1)
+            ->status(null)
             ->one();
         if ($childForeignId) {
             return Entry::find()
@@ -29,6 +30,7 @@ class ProductGroupService extends Component
                 ->sunriseForeignId($childForeignId)
                 ->descendantOf($parent)
                 ->level(2)
+                ->status(null)
                 ->one();
         }
         return $parent;
