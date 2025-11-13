@@ -98,6 +98,7 @@ class SyncProductsJob extends BaseJob
         $product = Product::find()
             ->sunriseForeignId($sunriseProduct['product_id'])
             ->typeId($this->productTypeId)
+            ->status(null)
             ->one()
             ?? new Product([
                 'typeId' => $this->productTypeId,
@@ -130,6 +131,7 @@ class SyncProductsJob extends BaseJob
         $product->promotable = true;
         $product->title = $sunriseProduct['product_title'];
         $product->sunriseProductGroups = $productGroups;
+        $product->enabled = $this->stringToBoolean($productDetails['is_active_in_webshop']);
         $product->setVariants($variants);
 
         if (Craft::$app->getElements()->saveElement($product)) {
@@ -180,10 +182,10 @@ class SyncProductsJob extends BaseJob
             $variant->price = $sku['sku_price_excl_vat'];
 
             // Values are booleans in form of string
-            $variant->enabled = !empty(array_filter(filter_var([
+            $variant->enabled = $this->stringToBoolean([
                 $sku['visible_in_webshop'],
                 $sku['sku_status']
-            ], FILTER_VALIDATE_BOOL, FILTER_REQUIRE_ARRAY)));
+            ]);
 
             $variants[] = $variant;
         }
@@ -281,5 +283,14 @@ class SyncProductsJob extends BaseJob
                 ]);
             }
         }
+    }
+
+    private function stringToBoolean($value)
+    {
+        if (!is_array($value)) {
+            $value = [$value];
+        }
+
+        return !empty(array_filter(filter_var($value, FILTER_VALIDATE_BOOL, FILTER_REQUIRE_ARRAY)));
     }
 }

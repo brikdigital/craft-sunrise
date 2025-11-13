@@ -24,6 +24,7 @@ class ProductService extends Component
         return Product::find()
             ->sunriseForeignId(':notempty:')
             ->type(self::PRODUCT_TYPE_HANDLE)
+            ->status(null)
             ->orderBy('id ASC');
     }
 
