@@ -12,10 +12,10 @@ class CustomerService extends Component
 {
     public const USER_GROUP_HANDLE = 'customers';
 
-    public function createCustomer(User $user): void
+    public function createCustomer(User $user): User
     {
          if (!empty($user->sunriseForeignId)) {
-             return;
+             return $user;
          }
 
          $plugin = Sunrise::getInstance();
@@ -60,5 +60,7 @@ class CustomerService extends Component
         if ($user->getDirtyAttributes() || $user->getDirtyFields()) {
             Craft::$app->getElements()->saveElement($user);
         }
+
+        return $user;
     }
 }

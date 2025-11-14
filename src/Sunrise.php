@@ -2,8 +2,12 @@
 
 namespace brikdigital\sunrise;
 
+use brikdigital\sunrise\jobs\SyncOrderJob;
+use brikdigital\sunrise\jobs\SyncOrderPaymentJob;
 use Craft;
+use craft\commerce\elements\Order;
 use craft\controllers\UsersController;
+use craft\helpers\Queue;
 use Monolog\Formatter\LineFormatter;
 use Psr\Log\LogLevel;
 use brikdigital\sunrise\exceptions\SunriseException;
@@ -81,6 +85,7 @@ class Sunrise extends Plugin
 
     private function attachEventHandlers(): void
     {
+        // Customers
         Event::on(
             Users::class,
             Users::EVENT_AFTER_ACTIVATE_USER,
@@ -100,6 +105,31 @@ class Sunrise extends Plugin
                 if ($user->isInGroup($this->customer::USER_GROUP_HANDLE)) {
                     $this->customer->createCustomer($user);
                 }
+            }
+        );
+
+        /**
+         * Orders
+         */
+        Event::on(
+            Order::class,
+            Order::EVENT_AFTER_COMPLETE_ORDER,
+            function (Event $e) {
+                $order = $e->sender;
+                Queue::push(new SyncOrderJob([
+                    'orderId' => $order->id
+                ]));
+            }
+        );
+
+        Event::on(
+            Order::class,
+            Order::EVENT_AFTER_ORDER_PAID,
+            function (Event $e) {
+                $order = $e->sender;
+                Queue::push(new SyncOrderPaymentJob([
+                    'orderId' => $order->id
+                ]));
             }
         );
     }
