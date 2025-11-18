@@ -5,46 +5,43 @@ namespace brikdigital\sunrise\services;
 use brikdigital\sunrise\exceptions\SunriseException;
 use brikdigital\sunrise\Sunrise;
 use Craft;
+use craft\commerce\elements\Order;
 use craft\elements\User;
 use yii\base\Component;
 
 class CustomerService extends Component
 {
-    public const USER_GROUP_HANDLE = 'customers';
-
-    public function createCustomer(User $user): User
+    public function createCustomer(Order $order): User
     {
-         if (!empty($user->sunriseForeignId)) {
-             return $user;
-         }
+        $customer = $order->getCustomer();
 
-         $plugin = Sunrise::getInstance();
-         $api = $plugin->api;
+        if (!empty($customer->sunriseForeignId)) {
+            return $customer;
+        }
 
-         $customer = null;
-         try {
-             $customers = $api->getAll('customer/search', [
-                 'customer_email' => $user->email,
-             ]);
-             $customer = $customers[0] ?? null;
-         } catch (SunriseException $e) {
-             // 404 = no customers found
-             if ($e->getCode() !== 404) {
-                 throw $e;
-             }
-         }
+        $plugin = Sunrise::getInstance();
+        $api = $plugin->api;
 
-        if (!$customer) {
-            $nameParts = explode(' ', $user->fullName);
+        $sunriseCustomers = $api->getAll('customer/search', [
+            'customer_email' => $customer->email,
+        ]);
+        $sunriseCustomer = current($sunriseCustomers);
+
+        if (!$sunriseCustomer) {
+            $billing = $order->getBillingAddress();
+
+            $nameParts = explode(' ', $billing->fullName ?? implode(' ', array_filter([$billing->firstName, $billing->lastName])) ?: $billing->getOrganization() ?? null);
             $body = array_filter([
-                'customer_email' => $user->email,
-                'customer_company_name' => $user->company ?: null,
+                'customer_id_api' => $customer->id,
+                'customer_email' => $customer->email,
+                'customer_company_name' => $billing->getOrganization() ?: null,
                 'customer_last_name' => array_pop($nameParts) ?: null,
                 'customer_first_name' => implode(' ', $nameParts) ?: null,
-                'customer_address' => $user->address ?: null,
-                'customer_phone' => $user->phonenumber ?: null,
-                'customer_zip' => $user->zipcode ?: null,
-                'customer_city' => $user->city ?: null,
+                'customer_address' => $billing->getAddressLine1() ?: null,
+                'customer_zip' => $billing->getPostalCode() ?: null,
+                'customer_city' => $billing->getLocality() ?: null,
+                'country_id' => $billing->getCountryCode() ?: null,
+                'state_code' => $billing->getAdministrativeArea() ?: null,
             ]);
 
             $response = $api->post('customer', $body);
@@ -52,15 +49,15 @@ class CustomerService extends Component
                 $plugin::error('Error creating customer', ['response' => json_encode($response)]);
             }
 
-            $customer = $response;
+            $sunriseCustomer = $response;
         }
 
-        $user->sunriseForeignId = $customer['customer_id'];
+        $customer->sunriseForeignId = $sunriseCustomer['customer_id'];
 
-        if ($user->getDirtyAttributes() || $user->getDirtyFields()) {
-            Craft::$app->getElements()->saveElement($user);
+        if ($customer->getDirtyAttributes() || $customer->getDirtyFields()) {
+            Craft::$app->getElements()->saveElement($customer);
         }
 
-        return $user;
+        return $customer;
     }
 }

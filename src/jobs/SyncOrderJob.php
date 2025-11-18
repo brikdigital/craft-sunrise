@@ -27,7 +27,7 @@ class SyncOrderJob extends BaseJob
 
         $customer = $order->getCustomer();
         if (empty($customer->sunriseForeignId)) {
-            $customer = $plugin->customer->createCustomer($customer);
+            $customer = $plugin->customer->createCustomer($order);
         }
 
         $details = [];
