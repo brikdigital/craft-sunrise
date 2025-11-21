@@ -183,6 +183,8 @@ class SyncProductsJob extends BaseJob
 
             $variant->title = $sku['assigned_attribute_options'];
             $variant->price = $sku['sku_price_excl_vat'];
+            $variant->minQty = $sku['min_qty'] ?: null;
+            $variant->productQtyBoxSize = $sku['prod_package_unit'] ?: null;
 
             // Values are booleans in form of string
             $variant->enabled = $this->stringToBoolean([
