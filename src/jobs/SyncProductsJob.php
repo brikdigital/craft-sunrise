@@ -10,8 +10,6 @@ use brikdigital\sunrise\Sunrise;
 use Craft;
 use craft\commerce\elements\Product;
 use craft\commerce\elements\Variant;
-use craft\commerce\models\Discount;
-use craft\commerce\services\Discounts;
 use craft\elements\ElementCollection;
 use craft\helpers\Queue;
 use craft\queue\BaseJob;
@@ -28,7 +26,6 @@ class SyncProductsJob extends BaseJob
     private SunriseService $api;
     private ProductService $productService;
     private ProductGroupService $productGroupService;
-    private Discounts $discountService;
     private AttributeService $attributeService;
     private int $productTypeId;
     private int $limit = 20;
@@ -40,7 +37,6 @@ class SyncProductsJob extends BaseJob
         $this->api = $plugin->api;
         $this->productService = $plugin->product;
         $this->productGroupService = $plugin->productGroup;
-        $this->discountService = new Discounts();
         $this->attributeService = $plugin->attribute;
         $this->productTypeId = $this->productService->getProductType()->id;
 
@@ -65,7 +61,7 @@ class SyncProductsJob extends BaseJob
 
         // No more products to process
         if ($count <= 0) {
-            $this->deleteProducts($this->processedProductIds);
+            $this->deleteUnprocessedProducts($this->processedProductIds);
             return;
         }
 
@@ -182,9 +178,20 @@ class SyncProductsJob extends BaseJob
             }
 
             $variant->title = $sku['assigned_attribute_options'];
-            $variant->price = $sku['sku_price_excl_vat'];
-            $variant->minQty = $sku['min_qty'] ?: null;
+            $variant->price = $sku['sku_price_excl_vat'] ?: null;
+//            $variant->minQty = $sku['min_qty'] ?: null;
             $variant->productQtyBoxSize = $sku['prod_package_unit'] ?: null;
+
+            // Tiered pricing
+            $tierPrices = [];
+            if ($sku['min_qty'] && $sku['sku_promo_price']) {
+                $tierPrices[] = [
+                    'qty' => (int)$sku['min_qty'],
+                    'price' => (float)$sku['sku_promo_price'],
+                ];
+            }
+
+            $variant->productTierprice = $tierPrices;
 
             // Values are booleans in form of string
             $variant->enabled = $this->stringToBoolean([
@@ -208,81 +215,11 @@ class SyncProductsJob extends BaseJob
             $variants[] = $variant;
         }
 
-        // Check discounts
-        $this->checkDiscounts($product, $productSkus);
-
         // No need for variant delete logic, because product variants always get completely overwritten
         return $variants;
     }
 
-    private function checkDiscounts(Product $product, array $skuData)
-    {
-        foreach ($product->getVariants(true) as $variant) {
-            // Get existing discount
-            $discounts = $this->discountService->getDiscountsRelatedToPurchasable($variant);
-            $discount = current(array_filter($discounts, fn($discount) => str_contains($discount->name, 'Staffel')));
-
-            // Check if variant still exists
-            $sku = current(array_filter($skuData, fn($sku) => $sku['sku_id'] == $variant->getSku()));
-            if (!$sku) {
-                // If Sunrise SKU deleted, remove existing discount
-                if ($discount) {
-                    $this->deleteDiscount($discount);
-                }
-                continue;
-            }
-
-            $discountPrice = (float)$sku['sku_promo_price'];
-            $minQty = (int)$sku['min_qty'];
-
-            // Check for invalid discount and delete existing discount
-            if ($discountPrice <= 0 || $minQty <= 0) {
-                if ($discount) {
-                    $this->deleteDiscount($discount);
-                }
-                continue;
-            }
-
-            // Sync discount
-            $discount = $discount ?: new Discount([
-                'name' => "$variant->sku - Staffel"
-            ]);
-
-            $discount->setPurchasableIds([$variant->id]);
-            $discount->allCategories = true;
-            $discount->purchaseQty = $sku['min_qty'];
-            $discount->perItemDiscount = 0 - ((float)$sku['sku_price_excl_vat'] - $discountPrice);
-
-            try {
-                $this->discountService->saveDiscount($discount);
-                Sunrise::info('SAVED DISCOUNT', [
-                    'discount' => "$discount->id: $discount->name",
-                ]);
-            } catch (Exception $e) {
-                Sunrise::error('ERROR SAVING DISCOUNT', [
-                    'discount' => "$discount->id: $discount->name",
-                    'error' => $e->getMessage()
-                ]);
-            }
-        }
-    }
-
-    private function deleteDiscount($discount)
-    {
-        try {
-            $this->discountService->deleteDiscountById($discount->id);
-            Sunrise::info('DELETED DISCOUNT', [
-                'discount' => "$discount->id: $discount->name"
-            ]);
-        } catch (Exception $e) {
-            Sunrise::error('ERROR DELETING DISCOUNT', [
-                'discount' => "$discount->id: $discount->name",
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
-
-    private function deleteProducts(array $processedIds)
+    private function deleteUnprocessedProducts(array $processedIds)
     {
         $deletedProducts = Product::find()
             ->typeId($this->productTypeId)
