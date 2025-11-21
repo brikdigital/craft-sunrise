@@ -29,9 +29,11 @@ class SyncAttributesJob extends BaseJob
 
         $section = $this->service->getSection();
 
-        $attributes = $this->service->getAttributes();
-        $count = count($attributes);
-        foreach ($attributes as $i => $attribute) {
+        $sunriseAttributes = $this->api->getAll('attributemaster/search');
+        $sunriseAttributes = array_values(array_filter($sunriseAttributes, fn($attribute) => $attribute['lang_id'] === 'EN'));
+
+        $count = count($sunriseAttributes);
+        foreach ($sunriseAttributes as $i => $sunriseAttribute) {
             $this->setProgress(
                 $queue,
                 $i / $count,
@@ -41,8 +43,33 @@ class SyncAttributesJob extends BaseJob
                 ])
             );
 
+            /**
+             * UPSERT ATTRIBUTE
+             */
+            $attributeId = $sunriseAttribute['attribute_extension'] ?? null;
+
+            $attribute = $this->service->getAttributeByForeignId($attributeId);
+            if (!$attribute) {
+                $attribute = new Entry([
+                    'sectionId' => $section->id,
+                    'typeId' => $section->getEntryTypes()[0]?->id,
+                    'sunriseForeignId' => $attributeId
+                ]);
+            }
+
+            $attribute->title = $sunriseAttribute['attribute_name'] ?? null;
+
+            if ($attribute->getDirtyAttributes() || $attribute->getDirtyFields()) {
+                Craft::$app->getElements()->saveElement($attribute);
+
+                Sunrise::info('Updated attribute', ['id' => $attribute->id, 'title' => $attribute->title]);
+            }
+
+            /**
+             * UPSERT OPTIONS
+             */
             $sunriseOptions = $this->api->getAll('attributemasteroption/search', [
-                'attribute_extension' => $attribute->sunriseForeignId
+                'attribute_extension' => $attributeId
             ]);
             $sunriseOptions = array_filter($sunriseOptions, fn($option) => $option['lang_id'] === 'EN');
 
@@ -63,6 +90,8 @@ class SyncAttributesJob extends BaseJob
                 if ($option->getDirtyAttributes() || $option->getDirtyFields()) {
                     Craft::$app->getElements()->saveElement($option);
                     Craft::$app->getStructures()->append($section->structureId, $option, $attribute);
+
+                    Sunrise::info('Updated option', ['id' => $option->id, 'title' => $option->title]);
                 }
             }
         }

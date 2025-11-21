@@ -11,35 +11,26 @@ class AttributeService extends Component
 {
     public const SECTION_HANDLE = 'sunriseAttributes';
 
-    public function getAttributes(): array
-    {
-        return Entry::find()
-            ->section(self::SECTION_HANDLE)
-            ->level(1)
-            ->status(null)
-            ->all();
-    }
-
     public function getSection(): ?Section
     {
         return Craft::$app->getSections()->getSectionByHandle(self::SECTION_HANDLE);
     }
 
-    public function getAttributeByForeignId(string $attributeId)
+    public function getAttributeByForeignId(string $foreignId)
     {
         return Entry::find()
             ->section(self::SECTION_HANDLE)
-            ->sunriseForeignId($attributeId)
+            ->sunriseForeignId($foreignId)
             ->level(1)
             ->status(null)
             ->one();
     }
 
-    public function getOptionByForeignId(string $attributeId, string $optionId)
+    public function getOptionByForeignId(string $attributeId, string $foreignId)
     {
         return Entry::find()
             ->section(self::SECTION_HANDLE)
-            ->sunriseForeignId($optionId)
+            ->sunriseForeignId($foreignId)
             ->descendantOf($attributeId)
             ->level(2)
             ->status(null)
